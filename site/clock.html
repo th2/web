@@ -1,0 +1,62 @@
+<html>
+<head>
+<script>
+function startTimer()
+{
+var now=new Date();
+var l1=now.getSeconds()%10;
+var l2=Math.floor(now.getSeconds() / 10);
+var l3=now.getMinutes()%10;
+var l4=Math.floor(now.getMinutes() / 10);
+var h=now.getHours();
+var m=now.getMinutes();
+var s=now.getSeconds();
+//if(h>12) h=h-12;
+var l5=h%10;
+var l6=Math.floor(h / 10);
+if(h<10) h="0"+h;
+if(m<10) m="0"+m;
+if(s<10) s="0"+s;
+document.title=h+":"+m+":"+s;
+
+if(l1%2==1)				document.getElementById('a').style.backgroundColor="#2A4159"; else document.getElementById('a').style.backgroundColor="#191919"; 
+if(l1==2 || l1==3 || l1==6 || l1==7)	document.getElementById('b').style.backgroundColor="#2A4159"; else document.getElementById('b').style.backgroundColor="#191919"; 
+if(l1==4 || l1==5 || l1==6 || l1==7)	document.getElementById('c').style.backgroundColor="#2A4159"; else document.getElementById('c').style.backgroundColor="#191919";  
+if(l1==8 || l1==9)			document.getElementById('d').style.backgroundColor="#2A4159"; else document.getElementById('d').style.backgroundColor="#191919"; 
+if(l2%2==1)				document.getElementById('e').style.backgroundColor="#2A4159"; else document.getElementById('e').style.backgroundColor="#191919"; 
+if(l2==2 || l2==3 || l2==6 || l2==7)	document.getElementById('f').style.backgroundColor="#2A4159"; else document.getElementById('f').style.backgroundColor="#191919"; 
+if(l2==4 || l2==5 || l2==6)		document.getElementById('g').style.backgroundColor="#2A4159"; else document.getElementById('g').style.backgroundColor="#191919"; 
+					document.getElementById('h').style.backgroundColor="#191919"; 
+
+if(l3%2==1)				document.getElementById('i').style.backgroundColor="#2A4159"; else document.getElementById('i').style.backgroundColor="#191919"; 
+if(l3==2 || l3==3 || l3==6 || l3==7)	document.getElementById('j').style.backgroundColor="#2A4159"; else document.getElementById('j').style.backgroundColor="#191919"; 
+if(l3==4 || l3==5 || l3==6 || l3==7)	document.getElementById('k').style.backgroundColor="#2A4159"; else document.getElementById('k').style.backgroundColor="#191919";  
+if(l3==8 || l3==9)			document.getElementById('l').style.backgroundColor="#2A4159"; else document.getElementById('l').style.backgroundColor="#191919"; 
+if(l4%2==1)				document.getElementById('m').style.backgroundColor="#2A4159"; else document.getElementById('m').style.backgroundColor="#191919"; 
+if(l4==2 || l4==3 || l4==6 || l4==7)	document.getElementById('n').style.backgroundColor="#2A4159"; else document.getElementById('n').style.backgroundColor="#191919"; 
+if(l4==4 || l4==5 || l4==6)		document.getElementById('o').style.backgroundColor="#2A4159"; else document.getElementById('o').style.backgroundColor="#191919"; 
+					document.getElementById('p').style.backgroundColor="#191919"; 
+
+if(l5%2==1)				document.getElementById('q').style.backgroundColor="#2A4159"; else document.getElementById('q').style.backgroundColor="#191919"; 
+if(l5==2 || l5==3 || l5==6 || l5==7)	document.getElementById('r').style.backgroundColor="#2A4159"; else document.getElementById('r').style.backgroundColor="#191919"; 
+if(l5==4 || l5==5 || l5==6 || l5==7)	document.getElementById('s').style.backgroundColor="#2A4159"; else document.getElementById('s').style.backgroundColor="#191919";  
+if(l5==8 || l5==9)			document.getElementById('t').style.backgroundColor="#2A4159"; else document.getElementById('t').style.backgroundColor="#191919"; 
+if(l6%2==1)				document.getElementById('u').style.backgroundColor="#2A4159"; else document.getElementById('u').style.backgroundColor="#191919"; 
+if(l6==2)				document.getElementById('v').style.backgroundColor="#2A4159"; else document.getElementById('v').style.backgroundColor="#191919"; 
+					document.getElementById('w').style.backgroundColor="#191919"; 
+					document.getElementById('x').style.backgroundColor="#191919"; 
+
+t=setTimeout(function(){startTimer()},500);
+}
+
+</script>
+</head>
+<body onload="startTimer()" style="background-color:#000000;">
+	<table style="width:100%;height:100%;margin-left:0px;margin-right:0px;margin-top:0px;">
+		<tr><td id="x"> </td><td id="t"> </td><td id="p"> </td><td id="l"> </td><td id="h"> </td><td id="d"> </td></tr>
+		<tr><td id="w"> </td><td id="s"> </td><td id="o"> </td><td id="k"> </td><td id="g"> </td><td id="c"> </td></tr>
+		<tr><td id="v"> </td><td id="r"> </td><td id="n"> </td><td id="j"> </td><td id="f"> </td><td id="b"> </td></tr>
+		<tr><td id="u"> </td><td id="q"> </td><td id="m"> </td><td id="i"> </td><td id="e"> </td><td id="a"> </td></tr>
+	</table>
+</body>
+</html>
