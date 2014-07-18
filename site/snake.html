@@ -4,9 +4,10 @@
     <div id="snake1" style="color:#f0f">0</div>
     <div id="snake2" style="color:#0ff">0</div>
     <script>
-        var width = 30;
-        var height = 30;
+        var width = 50;
+        var height = 50;
         var revive = true;
+        var reviveReset = false;
         var c, goal, snakes;
         
         function init() {
@@ -14,22 +15,23 @@
             Number.prototype.mod = function(n) {
                 return ((this%n)+n)%n;
             }
-            
+                        
             var canvas = document.getElementById("field");
             canvas.width=width*9;
             canvas.height=height*9;
             c = canvas.getContext("2d");
             snakes = new Array();
-            snakes[0] = {
-                id:0,
-                points:0,
-                deaths:0,
-                loc:randomPos(),
-                dir:1,
-                colorHead:'#77f',
-                colorTail:'#55c',
-                tail:new Array(),
-                occupying:function(p){
+            
+            function Snake(id, colorHead, colorTail) {
+                this.id = id;
+                this.points=0;
+                this.deaths=0;
+                this.loc=randomPos();
+                this.dir=1;
+                this.colorHead=colorHead;
+                this.colorTail=colorTail;
+                this.tail=new Array();
+                this.occupying=function(p){
                     var occ = false;
                     if(this.loc.x==p.x && this.loc.y==p.y)
                         occ = true;
@@ -40,18 +42,22 @@
                         });
                     }
                     return occ;
-                },
-                move:function(){
+                };
+                this.strategy = function(){
+                    var plan=0;
+                    if(this.loc.x<goal.x)
+                        plan=1;
+                    else if(this.loc.x>goal.x)
+                        plan=3;
+                    else if(this.loc.y<goal.y)
+                        plan=2;
+                    else if(this.loc.y>goal.y)
+                        plan=0;
+                    return plan;
+                };
+                this.move=function(){
                     if(this.dir!=-1){
-                        var plan=0;
-                        if(this.loc.x<goal.x)
-                            plan=1;
-                        else if(this.loc.x>goal.x)
-                            plan=3;
-                        else if(this.loc.y<goal.y)
-                            plan=2;
-                        else if(this.loc.y>goal.y)
-                            plan=0;
+                        var plan=this.strategy();
 
                         if(free(newPos(this.loc, plan))==true){
                             this.dir=plan;
@@ -71,7 +77,8 @@
                         } else {
                             if(revive) {
                                 this.deaths++;
-                                this.tail = new Array();
+                                if(reviveReset)
+                                    this.tail = new Array();
                                 this.loc = randomPos();
                             } else {
                                 this.dir=-1;
@@ -79,136 +86,40 @@
                             }
                         }
                     }
+                };
+            }
+
+            snakes[0] = new Snake(0,'#77f','#55c');
+            snakes[1] = new Snake(1,'#f0f','#c0c');
+            snakes[1].strategy = function(){
+                var plan=0;
+                if(this.loc.y<goal.y)
+                    plan=2;
+                else if(this.loc.y>goal.y)
+                    plan=0;
+                else if(this.loc.x<goal.x)
+                    plan=1;
+                else if(this.loc.x>goal.x)
+                    plan=3;
+                return plan;
+            };
+            snakes[2] = new Snake(2,'#0ff','#0cc');
+            snakes[2].strategy = function(){
+                var plan=0;
+                if(Math.abs(this.loc.x-goal.x)>Math.abs(this.loc.y-goal.y)){
+                    if(this.loc.x<goal.x)
+                        plan=1;
+                    else if(this.loc.x>goal.x)
+                        plan=3;
+                } else {
+                    if(this.loc.y<goal.y)
+                        plan=2;
+                    else if(this.loc.y>goal.y)
+                        plan=0;
                 }
+                return plan;
             };
             
-            snakes[1] = {
-                id:1,
-                points:0,
-                deaths:0,
-                loc:randomPos(),
-                dir:1,
-                colorHead:'#f0f',
-                colorTail:'#c0c',
-                tail:new Array(),
-                occupying:function(p){
-                    var occ = false;
-                    if(this.loc.x==p.x && this.loc.y==p.y)
-                        occ = true;
-                    else {
-                        this.tail.forEach(function(t) {
-                            if(t.x==p.x && t.y==p.y)
-                                occ = true;
-                        });
-                    }
-                    return occ;
-                },
-                move:function(){
-                    if(this.dir!=-1){
-                        var plan=0;
-                        if(this.loc.y<goal.y)
-                            plan=2;
-                        else if(this.loc.y>goal.y)
-                            plan=0;
-                        else if(this.loc.x<goal.x)
-                            plan=1;
-                        else if(this.loc.x>goal.x)
-                            plan=3;
-
-
-                        if(free(newPos(this.loc, plan))==true){
-                            this.dir=plan;
-                        } else if(free(newPos(this.loc, this.dir))==true){ //straight
-                            //console.log("straight");
-                            //this.dir=this.dir;
-                        } else if(free(newPos(this.loc, (this.dir-1).mod(4)))==true){ //left
-                            //console.log("left"+((this.dir-1).mod(4)));
-                            this.dir=(this.dir-1).mod(4);
-                        } else if(free(newPos(this.loc, (this.dir+1).mod(4)))==true){ //right
-                            //console.log("right"+((this.dir+1).mod(4)));
-                            this.dir=(this.dir+1).mod(4);
-                        }
-                        
-                        if(free(newPos(this.loc, this.dir))==true){
-                            this.loc=newPos(this.loc, this.dir);
-                        } else {
-                            if(revive) {
-                                this.deaths++;
-                                this.tail = new Array();
-                                this.loc = randomPos();
-                            } else {
-                                this.dir=-1;
-                                this.colorTail='#f00';
-                            }
-                        }
-                    }
-                }
-            };
-            
-            snakes[2] = {
-                id:2,
-                points:0,
-                deaths:0,
-                loc:randomPos(),
-                dir:1,
-                colorHead:'#0ff',
-                colorTail:'#0cc',
-                tail:new Array(),
-                occupying:function(p){
-                    var occ = false;
-                    if(this.loc.x==p.x && this.loc.y==p.y)
-                        occ = true;
-                    else {
-                        this.tail.forEach(function(t) {
-                            if(t.x==p.x && t.y==p.y)
-                                occ = true;
-                        });
-                    }
-                    return occ;
-                },
-                move:function(){
-                    if(this.dir!=-1){
-                        var plan=0;
-                        if(Math.abs(this.loc.x-goal.x)>Math.abs(this.loc.y-goal.y)){
-                            if(this.loc.x<goal.x)
-                                plan=1;
-                            else if(this.loc.x>goal.x)
-                                plan=3;
-                        } else {
-                            if(this.loc.y<goal.y)
-                                plan=2;
-                            else if(this.loc.y>goal.y)
-                                plan=0;
-                        }
-                        
-                        if(free(newPos(this.loc, plan))==true){
-                            this.dir=plan;
-                        } else if(free(newPos(this.loc, this.dir))==true){ //straight
-                            //console.log("straight");
-                            //this.dir=this.dir;
-                        } else if(free(newPos(this.loc, (this.dir-1).mod(4)))==true){ //left
-                            //console.log("left"+((this.dir-1).mod(4)));
-                            this.dir=(this.dir-1).mod(4);
-                        } else if(free(newPos(this.loc, (this.dir+1).mod(4)))==true){ //right
-                            //console.log("right"+((this.dir+1).mod(4)));
-                            this.dir=(this.dir+1).mod(4);
-                        }
-                        
-                        if(free(newPos(this.loc, this.dir))==true){
-                            this.loc=newPos(this.loc, this.dir);
-                        } else {
-                            if(revive) {
-                                this.deaths++;
-                                this.tail = new Array();
-                                this.loc = randomPos();
-                            } else {
-                                this.dir=-1;
-                                this.colorTail='#f00';
-                            }
-                        }
-                    }
-                }
-            };
             c.save();
             goal = randomPos();
             loop();
@@ -290,7 +201,7 @@
                     goal=randomPos();
                 }
             });
-            setTimeout(loop , 10);
+            setTimeout(loop , 50);
         }
         init();
     </script>
