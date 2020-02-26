@@ -35,7 +35,6 @@ module.exports.info = function (err) {
   fs.appendFile('log/info/' + dateFormat(now, 'yyyy-mm-dd') + '.json', JSON.stringify(err) + ',', function (err) {
     if (err) throw err
   })
-  telegram.sendMessage(privateConfig.telegramTargetId, err)
 }
 
 module.exports.exception = function (err) {
