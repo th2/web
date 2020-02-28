@@ -4,7 +4,6 @@ var router = express.Router()
 var path = require('path')
 var httpProxy = require('http-proxy')
 var proxy = httpProxy.createProxyServer({})
-var logger = require('./logger')
 var iris = require('./iris')
 var secrets = require('./config/secrets')
 
