@@ -5,7 +5,7 @@ var path = require('path')
 var httpProxy = require('http-proxy')
 var proxy = httpProxy.createProxyServer({})
 var iris = require('./iris')
-var dash = require('./dash')
+var dash = require('./dash/days')
 var secrets = require('./config/secrets')
 
 router.use('/dash', dash)
