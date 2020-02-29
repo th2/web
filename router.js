@@ -5,7 +5,10 @@ var path = require('path')
 var httpProxy = require('http-proxy')
 var proxy = httpProxy.createProxyServer({})
 var iris = require('./iris')
+var dash = require('./dash')
 var secrets = require('./config/secrets')
+
+router.use('/dash', dash)
 
 router.use('/', function (req, res) {
   if (req.url.includes('..')) {

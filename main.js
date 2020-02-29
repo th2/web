@@ -10,11 +10,17 @@ var app = express()
 
 var visitTransport = new (winston.transports.DailyRotateFile)({
   filename: 'log/visit/%DATE%.log',
-  datePattern: 'YYYY-MM-DD'
+  datePattern: 'YYYY-MM-DD',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json())
 })
 var errorTransport = new (winston.transports.DailyRotateFile)({
   filename: 'log/error/%DATE%.log',
-  datePattern: 'YYYY-MM-DD'
+  datePattern: 'YYYY-MM-DD',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json())
 })
 
 app.use(expressWinston.logger({ transports: [visitTransport] }))
