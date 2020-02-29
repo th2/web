@@ -16,7 +16,8 @@ router.get('/:day', function (req, res) {
   for (let i in lines) {
     if (lines[i].startsWith('{')) {
       let visit = JSON.parse(lines[i])
-      pathmap.set(visit.message, pathmap.get(visit.message) + 1 || 1)
+      let path = visit.meta.req.headers.host + ' ' + visit.message
+      pathmap.set(path, pathmap.get(path) + 1 || 1)
     }
   }
   let patharray = []
