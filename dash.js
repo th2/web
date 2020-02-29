@@ -20,8 +20,6 @@ router.get('/day/:day', function (req, res) {
   <title>Dash ${req.params.day}</title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <link rel="stylesheet" href="/dash.css">
-  <script src="sortabletable.js" language="javascript" type="text/javascript"></script>
-  <script src="tfAdapter.sortabletable.js" language="javascript" type="text/javascript"></script>
   </head><body>`
   page += generateVisitTable(req.params.day)
   page += '<body class=".bg-dark"></html>'
