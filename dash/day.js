@@ -4,20 +4,34 @@ const fs = require('fs')
 const secrets = require('../config/secrets')
 const router = express.Router()
 
-router.get('/:day', function (req, res) {
+router.use('/:day', function (req, res) {
   let visits = readVisits(req.params.day)
   res.send(`
   <html><head>
     <title>Dash ${req.params.day}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link rel="stylesheet" href="/dash.css">
+    <script>
+    Array.from(document.getElementsByClassName("submit")).forEach(element => 
+      element.addEventListener('keydown', () => { if (event.keyCode == 13) { this.form.submit() }}, false))
+    </script>
   </head><body class=".bg-dark">
     <div class="row">
+      <div class="col">
+        <form method="post">
+          <input type="text" name="datefrom" value="${req.params.day}" class="submit" />
+          <input type="text" name="dateto" value="${req.params.day}" class="submit" />
+          <input type="submit" value="↩️" class="submit" />
+          <input type="text" name="query" style="width: 100%" class="submit" />
+        </form>
+      </div>
+    </div>
+    <div class="row">
       <div class="col" style="height: 500px; overflow-y: scroll;">
-        ${aggregateTable(visits, (x) => { return x.meta.req.headers.host + ' ' + x.message })}
+        ${aggregateTable(visits, 'path', (x) => { return x.meta.req.headers.host + ' ' + x.message })}
       </div>
       <div class="col" style="height: 500px; overflow-y: scroll;">
-        ${aggregateTable(visits, (x) => { 
+        ${aggregateTable(visits, 'ip', (x) => { 
           if(x.meta.req.connection) { 
             return x.meta.req.connection.remoteAddress 
           } else {
@@ -25,8 +39,8 @@ router.get('/:day', function (req, res) {
           }
         })}
       </div>
-      <div class="col">
-        ${aggregateTable(visits, (x) => { 
+      <div class="col" style="height: 500px; overflow-y: scroll;">
+        ${aggregateTable(visits, 'agent', (x) => { 
           return x.meta.req.headers['user-agent'] + ' | ' +
           x.meta.req.headers['accept-encoding'] + ' | ' +
           x.meta.req.headers['accept-language'] 
@@ -52,20 +66,22 @@ function readVisits(day) {
   return visits
 }
 
-function aggregateTable(visits, valueFunction) {
+function aggregateTable(visits, valueType, valueFunction) {
   let page = ''
   let aggregation = aggregateCount(visits, valueFunction)
   page += `<table class="table table-dark table-striped">
     <thead>
     <tr>
+    <th></th>
     <th>path</th>
     <th>count</th>
     </tr>
     </thead>`
   for (let i in aggregation) {
     page += `<tr>
-      <td>${aggregation[i].value}</td>
+      <td>➕<a href="onclick:exclude('${valueType}', '${aggregation[i].value}')">➖</a></td>
       <td>${aggregation[i].count}</td>
+      <td>${aggregation[i].value}</td>
     </tr>`
   }
   page += '</table>'
