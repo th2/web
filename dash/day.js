@@ -14,13 +14,23 @@ router.get('/:day', function (req, res) {
   </head><body class=".bg-dark">
     <div class="row">
       <div class="col" style="height: 500px; overflow-y: scroll;">
-        ${aggregatePathsTable(visits)}
+        ${aggregateTable(visits, (x) => { return x.meta.req.headers.host + ' ' + x.message })}
+      </div>
+      <div class="col" style="height: 500px; overflow-y: scroll;">
+        ${aggregateTable(visits, (x) => { 
+          if(x.meta.req.connection) { 
+            return x.meta.req.connection.remoteAddress 
+          } else {
+            return 'unknown'
+          }
+        })}
       </div>
       <div class="col">
-        column 2: aggregate user ip
-      </div>
-      <div class="col">
-      column 2: aggregateUserAgent
+        ${aggregateTable(visits, (x) => { 
+          return x.meta.req.headers['user-agent'] + ' | ' +
+          x.meta.req.headers['accept-encoding'] + ' | ' +
+          x.meta.req.headers['accept-language'] 
+        })}
       </div>
     </div>
     <div class="row">
@@ -42,9 +52,9 @@ function readVisits(day) {
   return visits
 }
 
-function aggregatePathsTable(visits) {
+function aggregateTable(visits, valueFunction) {
   let page = ''
-  let aggregation = aggregateCount(visits, (x) => { return x.meta.req.headers.host + ' ' + x.message })
+  let aggregation = aggregateCount(visits, valueFunction)
   page += `<table class="table table-dark table-striped">
     <thead>
     <tr>
