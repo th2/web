@@ -5,7 +5,11 @@ const secrets = require('../config/secrets')
 const router = express.Router()
 
 router.use('/:day', function (req, res) {
-  let visits = readVisits(req.params.day)
+  let query = []
+  if(req.body && req.body.query) {
+    query = JSON.parse(req.body.query)
+  }
+  let visits = readVisits(req.params.day, query)
   res.send(`
   <html><head>
     <title>Dash ${req.params.day}</title>
@@ -23,13 +27,13 @@ router.use('/:day', function (req, res) {
           <input type="text" name="datefrom" value="${req.params.day}" class="submit" />
           <input type="text" name="dateto" value="${req.params.day}" class="submit" />
           <input type="submit" value="↩️" class="submit" />
-          <input type="text" name="query" style="width: 100%" class="submit" />
+          <textarea name="query" style="width: 100%" class="submit">${req.body.query}</textarea>
         </form>
       </div>
     </div>
     <div class="row">
       <div class="col" style="height: 500px; overflow-y: scroll;">
-        ${aggregateTable(visits, 'path', (x) => { return x.meta.req.headers.host + ' ' + x.message })}
+        ${aggregateTable(visits, 'path', (x) => { return x.meta.req.headers.host + '<br/>' + x.message })}
       </div>
       <div class="col" style="height: 500px; overflow-y: scroll;">
         ${aggregateTable(visits, 'ip', (x) => { 
@@ -42,8 +46,8 @@ router.use('/:day', function (req, res) {
       </div>
       <div class="col" style="height: 500px; overflow-y: scroll;">
         ${aggregateTable(visits, 'agent', (x) => { 
-          return x.meta.req.headers['user-agent'] + ' | ' +
-          x.meta.req.headers['accept-encoding'] + ' | ' +
+          return x.meta.req.headers['user-agent'] + '<br/>' +
+          x.meta.req.headers['accept-encoding'] + '<br/>' +
           x.meta.req.headers['accept-language'] 
         })}
       </div>
@@ -56,15 +60,31 @@ router.use('/:day', function (req, res) {
   </body></html>`)
 })
 
-function readVisits(day) {
+function readVisits(day, query) {
   let visits = []
   let lines = fs.readFileSync(`log/visit/${day}`).toString().split("\n")
   for (let i in lines) {
     if (lines[i].startsWith('{')) {
-      visits.push(JSON.parse(lines[i]))
+      let visit = JSON.parse(lines[i])
+      if (!isFiltered(visit, query)) {
+        visits.push(visit)
+      }
     }
   }
   return visits
+}
+
+function isFiltered(visit, query) {
+  for(let i in query) {
+    if(query[i].ex &&
+      query[i].type == 'agent' &&
+      query[i].value == visit.meta.req.headers['user-agent'] + ' ' +
+      visit.meta.req.headers['accept-encoding'] + ' ' +
+      visit.meta.req.headers['accept-language'] ) {
+        return true
+      }
+  }
+  return false
 }
 
 function aggregateTable(visits, valueType, valueFunction) {
