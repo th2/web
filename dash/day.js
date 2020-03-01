@@ -44,7 +44,7 @@ function readVisits(day) {
 
 function aggregatePathsTable(visits) {
   let page = ''
-  let aggregation = aggregateCount(visits)
+  let aggregation = aggregateCount(visits, (x) => { return x.meta.req.headers.host + ' ' + x.message })
   page += `<table class="table table-dark table-striped">
     <thead>
     <tr>
@@ -62,14 +62,14 @@ function aggregatePathsTable(visits) {
   return page
 }
 
-function aggregateCount(visits) {
+function aggregateCount(visits, valueFunction) {
   let countMap = new Map()
   for (let i in visits) {
-    let path = visits[i].meta.req.headers.host + ' ' + visits[i].message
-    countMap.set(path, countMap.get(path) + 1 || 1)
+    let value = valueFunction(visits[i])
+    countMap.set(value, countMap.get(value) + 1 || 1)
   }
   let resultArray = []
-  countMap.forEach ((v,k) => { resultArray.push({value: k, count: v}) })
+  countMap.forEach ((c, v) => { resultArray.push({value: v, count: c}) })
   resultArray = resultArray.sort((a, b) => b.count - a.count)
   return resultArray
 }
