@@ -19,6 +19,7 @@ router.use('/:day', function (req, res) {
     <div class="row">
       <div class="col">
         <form method="post">
+          <a href="/dash/">🔙</a>
           <input type="text" name="datefrom" value="${req.params.day}" class="submit" />
           <input type="text" name="dateto" value="${req.params.day}" class="submit" />
           <input type="submit" value="↩️" class="submit" />
@@ -67,20 +68,14 @@ function readVisits(day) {
 }
 
 function aggregateTable(visits, valueType, valueFunction) {
-  let page = ''
   let aggregation = aggregateCount(visits, valueFunction)
-  page += `<table class="table table-dark table-striped">
-    <thead>
-    <tr>
-    <th></th>
-    <th>path</th>
-    <th>count</th>
-    </tr>
-    </thead>`
+  let page = `<table class="table table-dark table-striped">
+    <thead><tr><th>path</th><th>count</th></tr></thead>`
   for (let i in aggregation) {
     page += `<tr>
-      <td>➕<a href="onclick:exclude('${valueType}', '${aggregation[i].value}')">➖</a></td>
-      <td>${aggregation[i].count}</td>
+      <td style="text-align:center;">${aggregation[i].count}
+      <a href="onclick:include('${valueType}', '${aggregation[i].value}')">➕</a>
+      <a href="onclick:exclude('${valueType}', '${aggregation[i].value}')">➖</a></td>
       <td>${aggregation[i].value}</td>
     </tr>`
   }
@@ -102,12 +97,7 @@ function aggregateCount(visits, valueFunction) {
 
 function visitTable(visits) {
   let sourcetable = `<table class="table table-dark table-striped"><tr>
-    <th>timestamp</th>
-    <th>level</th>
-    <th>message</th>
-    <th>meta.req</th>
-    <th>meta.res</td>
-    </tr>`
+    <th>timestamp</th><th>level</th><th>message</th><th>meta.req</th><th>meta.res</td></tr>`
   for (let i in visits) {
     let visit = visits[i]
     sourcetable += `<tr>
@@ -119,17 +109,7 @@ function visitTable(visits) {
     </tr>`
   }
   sourcetable += '</table>'
-  return `${sourcetable}`
+  return sourcetable
 }
-
-router.get('/:day/all', function (req, res) {
-  let page = `<html><head>
-  <title>Dash ${req.params.day}</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-  <link rel="stylesheet" href="/dash.css">
-  </head><body class=".bg-dark">`
-  page += '</body></html>'
-  res.send(page)
-})
 
 module.exports = router
