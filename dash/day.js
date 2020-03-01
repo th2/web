@@ -3,6 +3,7 @@ const express = require('express')
 const fs = require('fs')
 const secrets = require('../config/secrets')
 const router = express.Router()
+const skipPreFilter = true
 
 router.use('/:day', function (req, res) {
   let query = []
@@ -33,7 +34,7 @@ router.use('/:day', function (req, res) {
     </div>
     <div class="row">
       <div class="col" style="height: 500px; overflow-y: scroll;">
-        ${aggregateTable(visits, 'path', (x) => { return x.meta.req.headers.host + '<br/>' + x.message })}
+        ${aggregateTable(visits, 'path', (x) => { return x.meta.req.headers.host + ' ' + x.message }, query)}
       </div>
       <div class="col" style="height: 500px; overflow-y: scroll;">
         ${aggregateTable(visits, 'ip', (x) => { 
@@ -42,19 +43,19 @@ router.use('/:day', function (req, res) {
           } else {
             return 'unknown'
           }
-        })}
+        }, query)}
       </div>
       <div class="col" style="height: 500px; overflow-y: scroll;">
         ${aggregateTable(visits, 'agent', (x) => { 
-          return x.meta.req.headers['user-agent'] + '<br/>' +
-          x.meta.req.headers['accept-encoding'] + '<br/>' +
+          return x.meta.req.headers['user-agent'] + ' ' +
+          x.meta.req.headers['accept-encoding'] + ' ' +
           x.meta.req.headers['accept-language'] 
-        })}
+        }, query)}
       </div>
     </div>
     <div class="row">
       <div class="col">
-        ${visitTable(visits)}
+        ${visitTable(visits, query)}
       </div>
     </div>
   </body></html>`)
@@ -66,7 +67,7 @@ function readVisits(day, query) {
   for (let i in lines) {
     if (lines[i].startsWith('{')) {
       let visit = JSON.parse(lines[i])
-      if (!isFiltered(visit, query)) {
+      if (skipPreFilter || !isFiltered(visit, query)) {
         visits.push(visit)
       }
     }
@@ -87,13 +88,27 @@ function isFiltered(visit, query) {
   return false
 }
 
-function aggregateTable(visits, valueType, valueFunction) {
+function isFilteredAggregate(aggregate, query) {
+  for(let i in query) {
+    if(query[i].ex &&
+      query[i].value == aggregate) {
+        return true
+      }
+  }
+  return false
+}
+
+function aggregateTable(visits, valueType, valueFunction, query) {
   let aggregation = aggregateCount(visits, valueFunction)
   let page = `<table class="table table-dark table-striped">
     <thead><tr><th>path</th><th>count</th></tr></thead>`
   for (let i in aggregation) {
+    let highlight = ''
+    if(isFilteredAggregate(aggregation[i].value, query)) {
+      highlight = 'background-color:red;'
+    }
     page += `<tr>
-      <td style="text-align:center;">${aggregation[i].count}
+      <td style="text-align:center;${highlight}">${aggregation[i].count}
       <a href="onclick:include('${valueType}', '${aggregation[i].value}')">➕</a>
       <a href="onclick:exclude('${valueType}', '${aggregation[i].value}')">➖</a></td>
       <td>${aggregation[i].value}</td>
@@ -115,18 +130,20 @@ function aggregateCount(visits, valueFunction) {
   return resultArray
 }
 
-function visitTable(visits) {
+function visitTable(visits, query) {
   let sourcetable = `<table class="table table-dark table-striped"><tr>
     <th>timestamp</th><th>level</th><th>message</th><th>meta.req</th><th>meta.res</td></tr>`
   for (let i in visits) {
     let visit = visits[i]
-    sourcetable += `<tr>
-    <td>${visit.timestamp}</td>
-    <td>${visit.level}</td>
-    <td>${visit.message}</td>
-    <td>${JSON.stringify(visit.meta.req)}</td>
-    <td>${JSON.stringify(visit.meta.res)} responseTime:${visit.meta.responseTime}</td>
-    </tr>`
+    if(!isFiltered(visit, query)) {
+      sourcetable += `<tr>
+      <td>${visit.timestamp}</td>
+      <td>${visit.level}</td>
+      <td>${visit.message}</td>
+      <td>${JSON.stringify(visit.meta.req)}</td>
+      <td>${JSON.stringify(visit.meta.res)} responseTime:${visit.meta.responseTime}</td>
+      </tr>`
+    }
   }
   sourcetable += '</table>'
   return sourcetable
