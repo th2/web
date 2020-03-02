@@ -1,9 +1,84 @@
 'use strict'
 const express = require('express')
 const fs = require('fs')
+const extractor = require('./extractor')
 const secrets = require('../config/secrets')
 const router = express.Router()
 const skipPreFilter = true
+
+function readVisits(day, query) {
+  let visits = []
+  let lines = fs.readFileSync(`log/visit/${day}`).toString().split("\n")
+  for (let i in lines) {
+    if (lines[i].startsWith('{')) {
+      let visit = JSON.parse(lines[i])
+      if (skipPreFilter || !isFiltered(visit, query)) {
+        visits.push(visit)
+      }
+    }
+  }
+  return visits
+}
+
+function isFiltered(visit, query) {
+  for(let i in query) {
+    if(query[i].ex &&
+      query[i].type == 'agent' &&
+      query[i].value == extractor.agent(visit) ) {
+        return true
+      }
+  }
+  return false
+}
+
+function isFilteredAggregate(aggregate, query) {
+  for(let i in query) {
+    if(query[i].ex &&
+      query[i].value == aggregate) {
+        return true
+      }
+  }
+  return false
+}
+
+function aggregateTable(visits, valueType, valueFunction, query) {
+  let aggregation = extractor.aggregateCount(visits, valueFunction)
+  let page = `<table class="table table-dark table-striped">
+    <thead><tr><th>path</th><th>count</th></tr></thead>`
+  for (let i in aggregation) {
+    let highlight = ''
+    if(isFilteredAggregate(aggregation[i].value, query)) {
+      highlight = 'background-color:red;'
+    }
+    page += `<tr>
+      <td style="text-align:center;${highlight}">${aggregation[i].count}
+      <a href="onclick:include('${valueType}', '${aggregation[i].value}')">➕</a>
+      <a href="onclick:exclude('${valueType}', '${aggregation[i].value}')">➖</a></td>
+      <td>${aggregation[i].value}</td>
+    </tr>`
+  }
+  page += '</table>'
+  return page
+}
+
+function visitTable(visits, query) {
+  let sourcetable = `<table class="table table-dark table-striped"><tr>
+    <th>timestamp</th><th>level</th><th>message</th><th>meta.req</th><th>meta.res</td></tr>`
+  for (let i in visits) {
+    let visit = visits[i]
+    if(!isFiltered(visit, query)) {
+      sourcetable += `<tr>
+      <td>${visit.timestamp}</td>
+      <td>${visit.level}</td>
+      <td>${visit.message}</td>
+      <td>${JSON.stringify(visit.meta.req)}</td>
+      <td>${JSON.stringify(visit.meta.res)} responseTime:${visit.meta.responseTime}</td>
+      </tr>`
+    }
+  }
+  sourcetable += '</table>'
+  return sourcetable
+}
 
 router.use('/:day', function (req, res) {
   let query = []
@@ -34,23 +109,13 @@ router.use('/:day', function (req, res) {
     </div>
     <div class="row">
       <div class="col" style="height: 500px; overflow-y: scroll;">
-        ${aggregateTable(visits, 'path', (x) => { return x.meta.req.headers.host + ' ' + x.message }, query)}
+        ${aggregateTable(visits, 'path', extractor.path, query)}
       </div>
       <div class="col" style="height: 500px; overflow-y: scroll;">
-        ${aggregateTable(visits, 'ip', (x) => { 
-          if(x.meta.req.connection) { 
-            return x.meta.req.connection.remoteAddress 
-          } else {
-            return 'unknown'
-          }
-        }, query)}
+        ${aggregateTable(visits, 'address', extractor.address, query)}
       </div>
       <div class="col" style="height: 500px; overflow-y: scroll;">
-        ${aggregateTable(visits, 'agent', (x) => { 
-          return x.meta.req.headers['user-agent'] + ' ' +
-          x.meta.req.headers['accept-encoding'] + ' ' +
-          x.meta.req.headers['accept-language'] 
-        }, query)}
+        ${aggregateTable(visits, 'agent', extractor.agent, query)}
       </div>
     </div>
     <div class="row">
@@ -60,93 +125,5 @@ router.use('/:day', function (req, res) {
     </div>
   </body></html>`)
 })
-
-function readVisits(day, query) {
-  let visits = []
-  let lines = fs.readFileSync(`log/visit/${day}`).toString().split("\n")
-  for (let i in lines) {
-    if (lines[i].startsWith('{')) {
-      let visit = JSON.parse(lines[i])
-      if (skipPreFilter || !isFiltered(visit, query)) {
-        visits.push(visit)
-      }
-    }
-  }
-  return visits
-}
-
-function isFiltered(visit, query) {
-  for(let i in query) {
-    if(query[i].ex &&
-      query[i].type == 'agent' &&
-      query[i].value == visit.meta.req.headers['user-agent'] + ' ' +
-      visit.meta.req.headers['accept-encoding'] + ' ' +
-      visit.meta.req.headers['accept-language'] ) {
-        return true
-      }
-  }
-  return false
-}
-
-function isFilteredAggregate(aggregate, query) {
-  for(let i in query) {
-    if(query[i].ex &&
-      query[i].value == aggregate) {
-        return true
-      }
-  }
-  return false
-}
-
-function aggregateTable(visits, valueType, valueFunction, query) {
-  let aggregation = aggregateCount(visits, valueFunction)
-  let page = `<table class="table table-dark table-striped">
-    <thead><tr><th>path</th><th>count</th></tr></thead>`
-  for (let i in aggregation) {
-    let highlight = ''
-    if(isFilteredAggregate(aggregation[i].value, query)) {
-      highlight = 'background-color:red;'
-    }
-    page += `<tr>
-      <td style="text-align:center;${highlight}">${aggregation[i].count}
-      <a href="onclick:include('${valueType}', '${aggregation[i].value}')">➕</a>
-      <a href="onclick:exclude('${valueType}', '${aggregation[i].value}')">➖</a></td>
-      <td>${aggregation[i].value}</td>
-    </tr>`
-  }
-  page += '</table>'
-  return page
-}
-
-function aggregateCount(visits, valueFunction) {
-  let countMap = new Map()
-  for (let i in visits) {
-    let value = valueFunction(visits[i])
-    countMap.set(value, countMap.get(value) + 1 || 1)
-  }
-  let resultArray = []
-  countMap.forEach ((c, v) => { resultArray.push({value: v, count: c}) })
-  resultArray = resultArray.sort((a, b) => b.count - a.count)
-  return resultArray
-}
-
-function visitTable(visits, query) {
-  let sourcetable = `<table class="table table-dark table-striped"><tr>
-    <th>timestamp</th><th>level</th><th>message</th><th>meta.req</th><th>meta.res</td></tr>`
-  for (let i in visits) {
-    let visit = visits[i]
-    if(!isFiltered(visit, query)) {
-      sourcetable += `<tr>
-      <td>${visit.timestamp}</td>
-      <td>${visit.level}</td>
-      <td>${visit.message}</td>
-      <td>${JSON.stringify(visit.meta.req)}</td>
-      <td>${JSON.stringify(visit.meta.res)} responseTime:${visit.meta.responseTime}</td>
-      </tr>`
-    }
-  }
-  sourcetable += '</table>'
-  return sourcetable
-}
 
 module.exports = router
