@@ -21,8 +21,10 @@ router.use('/', function (req, res) {
     } else {
       proxy.web(req, res, { target: 'http://127.0.0.1:4000' })
     }
-  } else {
+  } else if (req.url == '/') {
     res.send('')
+  } else {
+    res.sendStatus(404)
   }
 })
 
